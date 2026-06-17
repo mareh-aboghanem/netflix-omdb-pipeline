@@ -1,38 +1,38 @@
-"""Example tests for Pydantic models. Replace with your own."""
+"""Tests for MovieDetails Pydantic models."""
 
 import pytest
 from pydantic import ValidationError
-from src.models import WeatherReading
+from src.models import MovieDetails
 
 
-def test_valid_reading():
+def test_valid_movie_reading():
     """A valid record should be accepted."""
-    reading = WeatherReading(
-        city="Copenhagen",
-        temperature=18.5,
-        humidity=65.0,
-        timestamp="2026-03-30T10:00",
+    reading = MovieDetails(
+        Title="Copenhagen",
+        Year="2026",
+        imdbID="tt11394180",
+        Response="True",
     )
-    assert reading.city == "Copenhagen"
-    assert reading.temperature == 18.5
+    assert reading.Title == "Copenhagen"
+    assert reading.Year == "2026"
+    assert reading.imdbID == "tt11394180"
 
 
-def test_invalid_temperature_too_high():
-    """Temperature above 100 should be rejected."""
+def test_missing_required_field():
+    """Missing required fields like 'Response' should raise a ValidationError."""
     with pytest.raises(ValidationError):
-        WeatherReading(
-            city="Copenhagen",
-            temperature=999,
-            humidity=65.0,
-            timestamp="2026-03-30T10:00",
-        )
+        MovieDetails(Title="Copenhagen", Year="2026")
 
 
-def test_missing_city():
-    """Missing required field should be rejected."""
-    with pytest.raises(ValidationError):
-        WeatherReading(
-            temperature=18.5,
-            humidity=65.0,
-            timestamp="2026-03-30T10:00",
-        )
+def test_valid_ratings_list():
+    """A movie with a properly structured ratings list should be accepted."""
+    reading = MovieDetails(
+        Title="Copenhagen",
+        Year="2026",
+        imdbID="tt11394180",
+        Response="True",
+        Ratings=[{"Source": "Rotten Tomatoes", "Value": "99%"}],
+    )
+    assert len(reading.Ratings) == 1
+    assert reading.Ratings[0].Source == "Rotten Tomatoes"
+    assert reading.Ratings[0].Value == "99%"
