@@ -10,6 +10,7 @@ import time
 from pydantic import ValidationError
 from src.models import MovieDetails
 from src.storage import insert_readings, upload_raw_json
+from src.clean_csv import read_csv_data, clean_csv_data
 
 load_dotenv()
 logging.basicConfig(
@@ -137,7 +138,13 @@ def transform(readings: list[MovieDetails], df_csv: pd.DataFrame) -> pd.DataFram
 def run():
     """Run the full pipeline: fetch -> validate -> transform -> store."""
     log.info("Pipeline starting")
-
+    log.info("Checking and cleaning the raw CSV data...")
+    raw_df = read_csv_data("./data/netflix_titles.csv")
+    if raw_df is not None:
+        cleaned_df = clean_csv_data(raw_df)
+        if cleaned_df is not None:
+            cleaned_df.to_csv("./data/netflix_titles_cleaned.csv", index=False)
+            log.info("Successfully updated and saved netflix_titles_cleaned.csv!")
     raw = fetch_data()
     if not raw:
         log.error("No raw data fetched from API.")

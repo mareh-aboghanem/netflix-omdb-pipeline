@@ -1,14 +1,16 @@
-# Week 7 Project: [Your Project Name]
+# Week 7 Project: Netflix & OMDb Movie Data Pipeline
 
 ## What it does
 
-<!-- Describe your pipeline in 1-2 sentences. What data does it fetch? Where does it store the results? -->
+This data pipeline clean and processes local Netflix titles, enriches them with live movie metadata (ratings, scores, and votes) from the OMDb API, and validates the unified records using Pydantic models. The final enriched dataset is structured and loaded into a PostgreSQL database, while the raw JSON responses are securely backed up in Azure Blob Storage.
+
+👉 For deep technical details, issues faced, and data metrics, read our full [Data Discovery & Cleaning Report](data_cleaning_report.md).
 
 ## Architecture
 
 ```text
-[Your API] ──► pipeline.py ──► Pydantic validation ──► Postgres INSERT (your schema)
-                                                     ──► Blob Storage (raw JSON)
+Netflix CSV + OMDb API ──► pipeline.py ──► Pydantic validation (MovieDetails) ──► Postgres INSERT (omdb_movies)
+                                                                               ──► Blob Storage (raw JSON)
 ```
 
 ## Run locally
@@ -18,8 +20,16 @@
 cp .env.example .env
 echo "POSTGRES_URL=$(az keyvault secret show --vault-name kv-hyf-data --name postgres-url --query value -o tsv)" >> .env
 echo "AZURE_STORAGE_CONNECTION_STRING=$(az keyvault secret show --vault-name kv-hyf-data --name storage-connection-string --query value -o tsv)" >> .env
-# Set your personal schema (replace alice with your GitHub handle):
-echo "DB_SCHEMA=dev_alice" >> .env
+
+# 1. Populate .env from Azure Key Vault
+cp .env.example .env
+echo "POSTGRES_URL=$(az keyvault secret show --vault-name kv-hyf-data --name postgres-url --query value -o tsv)" >> .env
+echo "AZURE_STORAGE_CONNECTION_STRING=$(az keyvault secret show --vault-name kv-hyf-data --name storage-connection-string --query value -o tsv)" >> .env
+
+# Set your personal schema and OMDB Key (Replace with your actual handle/key):
+echo "DB_SCHEMA=dev_your_github_handle" >> .env
+echo "OMDB_API_KEY=your_omdb_api_key_here" >> .env
+
 
 # 2. Install dependencies
 uv sync
