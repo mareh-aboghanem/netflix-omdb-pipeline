@@ -44,18 +44,27 @@ The UPSERT Approach: The solution requires shifting from a blind INSERT to an UP
 
 Actionable Step: Modify the SQL query inside the insert_readings function within src/storage.py by appending an ON CONFLICT clause -->
 
-**What I changed:** <!--I didn't use UPSERT because I thought it was safe to do ON CONFLICT (imdb_id) DO NOTHING. I'm not sure of my choice, but I think it's better than overwriting data.-->
+**What I changed:** <!--
+I didn't use UPSERT because I thought it was safe to do ON CONFLICT (imdb_id) DO NOTHING. I'm not sure of my choice, but I think it's better than overwriting data.
+
+-->
 
 ---
 
 ### Entry 2
 
-**What I asked:** <!--{"TimeStamp":"2026-06-17T19:23:52.4090408+00:00","Log":"updated and saved netflix_titles_cleaned.csv!"}
+**What I asked:** <!--
+{"TimeStamp":"2026-06-17T19:23:52.4090408+00:00","Log":"updated and saved netflix_titles_cleaned.csv!"}
 {"TimeStamp":"2026-06-17T19:23:52.4090666+00:00","Log":"OMDB_API_KEY is missing from environment variables."}
 {"TimeStamp":"2026-06-17T19:23:52.4090793+00:00","Log":"raw data fetched from API."}
 
-should i write my key?-->
+should i write my key?
+-->
 
-**What it gave me:**<!--The AI confirmed that the data-cleaning cycle succeeded, but the cloud API enrichment stage was skipped because the server lacked an access token. It suggested using az containerapp job update --set-env-vars OMDB_API_KEY=YOUR_KEY to update the job configuration.-->
+**What it gave me:**<!--
+The AI confirmed that the data-cleaning cycle succeeded, but the cloud API enrichment stage was skipped because the server lacked an access token. It suggested using az containerapp job update --set-env-vars OMDB_API_KEY=YOUR_KEY to update the job configuration.
+-->
 
-**What I changed:** <!--After the AI explained that it is safe because of `--set-env-vars`, I ran the command to inject my real API key directly into Azure's secure store.-->
+**What I changed:** <!--
+After the AI explained that it is safe because of `--set-env-vars`, I ran the command to inject my real API key directly into Azure's secure store.
+-->
