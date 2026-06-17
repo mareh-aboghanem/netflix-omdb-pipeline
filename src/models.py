@@ -1,15 +1,46 @@
 """Pydantic models for data validation. Replace with your own."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from typing import Optional, List
 
 
-class WeatherReading(BaseModel):
-    """Example model. Replace with your own data structure."""
+class RatingItem(BaseModel):
+    """Sub-model for the nested ratings list from OMDb."""
 
-    city: str
-    temperature: float = Field(ge=-100, le=100)
-    humidity: float = Field(ge=0, le=100)
-    timestamp: str
+    Source: str
+    Value: str
 
-    # TODO: Replace these fields with the fields from your API response.
-    # Pydantic will reject any record that does not match this schema.
+
+class MovieDetails(BaseModel):
+    """Pydantic model to validate incoming data from OMDb API."""
+
+    Title: str
+    Year: str
+    Rated: Optional[str] = "N/A"
+    Released: Optional[str] = "N/A"
+    Runtime: Optional[str] = "N/A"
+    Genre: Optional[str] = "N/A"
+    Director: Optional[str] = "Unknown"
+    Writer: Optional[str] = "Unknown"
+    Actors: Optional[str] = "Unknown"
+    Plot: Optional[str] = None
+    Language: Optional[str] = "N/A"
+    Country: Optional[str] = "N/A"
+    Awards: Optional[str] = "N/A"
+    Poster: Optional[str] = None
+    Ratings: Optional[List[RatingItem]] = []
+    Metascore: Optional[str] = "N/A"
+    imdbRating: Optional[str] = "N/A"
+    imdbVotes: Optional[str] = "N/A"
+    imdbID: str
+    Type: Optional[str] = "movie"
+    DVD: Optional[str] = "N/A"
+    BoxOffice: Optional[str] = "N/A"
+    Production: Optional[str] = "N/A"
+    Website: Optional[str] = "N/A"
+    Response: str
+
+    class Config:
+        """Pydantic configuration."""
+
+        populate_by_name = True

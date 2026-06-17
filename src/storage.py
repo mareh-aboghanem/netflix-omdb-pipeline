@@ -5,7 +5,6 @@ import logging
 import os
 from contextlib import closing
 from datetime import datetime, timezone
-
 import pandas as pd
 import psycopg2
 from azure.core.exceptions import ResourceExistsError
@@ -15,42 +14,56 @@ log = logging.getLogger(__name__)
 
 
 def insert_readings(df: pd.DataFrame) -> None:
-    """Insert a DataFrame of readings into Postgres.
-
-    Creates the table in your personal schema (DB_SCHEMA env var, e.g. dev_alice).
-    All CREATE TABLE and INSERT statements run inside that schema so your tables
-    never collide with other students on the shared server.
-    """
     db_url = os.environ["POSTGRES_URL"]
     schema = os.environ.get("DB_SCHEMA", "public")
 
     with closing(psycopg2.connect(db_url)) as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                f"CREATE SCHEMA IF NOT EXISTS {schema}"  # noqa: S608
-            )
-            cur.execute(f"SET search_path TO {schema}")  # noqa: S608
-
-            # TODO: Replace 'weather_readings' with a name that describes your data.
+            cur.execute(f'CREATE SCHEMA IF NOT EXISTS "{schema}"')  # noqa: S608
+            cur.execute(f'SET search_path TO "{schema}"')  # noqa: S608
+            # cur.execute("DROP TABLE IF EXISTS omdb_movies")
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS weather_readings (
-                    id SERIAL PRIMARY KEY,
-                    city TEXT NOT NULL,
-                    temperature REAL NOT NULL,
-                    humidity REAL NOT NULL,
-                    timestamp TEXT NOT NULL
+                CREATE TABLE IF NOT EXISTS omdb_movies (
+                    imdb_id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    year BIGINT NOT NULL,
+                    released DATE,
+                    imdb_score REAL,
+                    imdb_votes BIGINT,
+                    metascore BIGINT,
+                    rottentomatoes BIGINT
                 )
             """)
 
             for _, row in df.iterrows():
+                query = """
+                    INSERT INTO omdb_movies (imdb_id, title, year, released, imdb_score, imdb_votes, metascore, rottentomatoes)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (imdb_id) DO NOTHING
+                """
                 cur.execute(
-                    "INSERT INTO weather_readings (city, temperature, humidity, timestamp)"
-                    " VALUES (%s, %s, %s, %s)",
+                    query,
                     (
-                        row["city"],
-                        row["temperature"],
-                        row["humidity"],
-                        row["timestamp"],
+                        row["imdb_id"],
+                        row["title"],
+                        int(row["year"]) if pd.notnull(row["year"]) else 0,
+                        row["released"] if pd.notnull(row["released"]) else None,
+                        (
+                            float(row["imdb_score"])
+                            if pd.notnull(row["imdb_score"])
+                            else None
+                        ),
+                        (
+                            int(row["imdb_votes"])
+                            if pd.notnull(row["imdb_votes"])
+                            else None
+                        ),
+                        int(row["metascore"]) if pd.notnull(row["metascore"]) else None,
+                        (
+                            int(row["rottentomatoes"])
+                            if pd.notnull(row["rottentomatoes"])
+                            else None
+                        ),
                     ),
                 )
 
