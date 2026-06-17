@@ -1,4 +1,5 @@
 """Main pipeline: fetch, validate, store."""
+
 import logging
 import requests
 import os
@@ -9,6 +10,7 @@ import time
 from pydantic import ValidationError
 from src.models import MovieDetails
 from src.storage import insert_readings, upload_raw_json
+
 load_dotenv()
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
