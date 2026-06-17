@@ -32,7 +32,7 @@ Saved at: `./data/netflix_titles_cleaned.csv`
 
 ### 🔍 Issues & Strategy
 1. **Nested Ratings:** The API returns ratings inside a complex list.
-   * *Strategy:* Extracted `Rotten Tomatoes` and `Metascore` into separate, clean columns.
+   * *Strategy:* Extracted only `Rotten Tomatoes` because the other ratings were already repeated as standalone fields at the root level, and cleaned the columns for the final schema.
 2. **Missing Values:** Some fields from the API were completely empty (e.g., *Blood & Water*).
    * *Strategy:* Used Python to replace empty values with `None` so the database accepts them.
 3. **Integer Overflow:** Big numbers (like *Kota Factory* with 86,711 votes) caused the database to crash.
