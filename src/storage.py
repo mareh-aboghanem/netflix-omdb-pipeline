@@ -5,6 +5,7 @@ import logging
 import os
 from contextlib import closing
 from datetime import datetime, timezone
+
 import pandas as pd
 import psycopg2
 from azure.core.exceptions import ResourceExistsError
@@ -14,6 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def insert_readings(df: pd.DataFrame) -> None:
+    """Insert a DataFrame of movie records into Postgres."""
     db_url = os.environ["POSTGRES_URL"]
     schema = os.environ.get("DB_SCHEMA", "public")
 
@@ -21,7 +23,6 @@ def insert_readings(df: pd.DataFrame) -> None:
         with conn.cursor() as cur:
             cur.execute(f'CREATE SCHEMA IF NOT EXISTS "{schema}"')  # noqa: S608
             cur.execute(f'SET search_path TO "{schema}"')  # noqa: S608
-            # cur.execute("DROP TABLE IF EXISTS omdb_movies")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS omdb_movies (
                     imdb_id TEXT PRIMARY KEY,
@@ -69,10 +70,10 @@ def insert_readings(df: pd.DataFrame) -> None:
 
         conn.commit()
 
-    log.info("Inserted %d rows into %s.weather_readings", len(df), schema)
+    log.info("Inserted %d rows into %s.omdb_movies", len(df), schema)
 
 
-def upload_raw_json(raw_data) -> None:
+def upload_raw_json(raw_data: list[dict]) -> None:
     """Upload raw API response to Blob Storage as a JSON backup."""
     conn_str = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
     client = BlobServiceClient.from_connection_string(conn_str)
