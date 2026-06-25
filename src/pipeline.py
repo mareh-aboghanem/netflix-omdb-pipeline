@@ -1,16 +1,18 @@
 """Main pipeline: fetch, validate, store."""
 
 import logging
-import requests
 import os
 import sys
-from dotenv import load_dotenv
-import pandas as pd
 import time
+
+import pandas as pd
+import requests
+from dotenv import load_dotenv
 from pydantic import ValidationError
+
+from src.clean_csv import clean_csv_data, read_csv_data
 from src.models import MovieDetails
 from src.storage import insert_readings, upload_raw_json
-from src.clean_csv import read_csv_data, clean_csv_data
 
 load_dotenv()
 logging.basicConfig(
@@ -26,25 +28,25 @@ def fetch_data() -> list[dict]:
     OMDB_KEY = os.getenv("OMDB_API_KEY")
     BASE_URL = "http://www.omdbapi.com/"
     if not OMDB_KEY:
-        logging.info("Error: OMDB_API_KEY is missing from environment variables.")
+        log.error("OMDB_API_KEY is missing from environment variables.")
         return []
     csv_path = "./data/netflix_titles_cleaned.csv"
     if not os.path.exists(csv_path):
-        log.warning(f"Error:Cleaned csv {csv_path} not found.")
+        log.warning("Cleaned csv %s not found.", csv_path)
         return []
     df = pd.read_csv(csv_path)
     titles_to_fetch = df["title"].head(5).tolist()
     raw_records = []
     delay = 1.0
     for title in titles_to_fetch:
-        log.info(f"Fetching OMDb data for: {title}")
+        log.info("Fetching OMDb data for: %s", title)
         try:
             response = requests.get(
                 BASE_URL, params={"apikey": OMDB_KEY, "t": title}, timeout=10
             )
             if response.status_code == 429:
                 retry_after = int(response.headers.get("Retry-After", 5))
-                log.info(f"Rate limited, waiting {retry_after}s...")
+                log.info("Rate limited, waiting %ds...", retry_after)
                 time.sleep(retry_after)
                 response = requests.get(
                     BASE_URL, params={"apikey": OMDB_KEY, "t": title}, timeout=10
@@ -55,15 +57,15 @@ def fetch_data() -> list[dict]:
             if data.get("Response") == "True":
                 raw_records.append(data)
             else:
-                log.warning(f"Skipping: '{title}' not found on OMDb.")
+                log.warning("Skipping: '%s' not found on OMDb.", title)
 
         except requests.exceptions.RequestException as e:
-            log.error(f"API Network Error for '{title}': {e}")
+            log.error("API Network Error for '%s': %s", title, e)
         time.sleep(delay)
     return raw_records
 
 
-def validate(raw_records: list[dict]) -> tuple[list[MovieDetails], list[dict]]:
+def validate(raw_records: list[dict]) -> list[MovieDetails]:
     """Validate raw records using Pydantic models, returning valid items."""
     valid = []
     for i, record in enumerate(raw_records):
@@ -77,8 +79,8 @@ def validate(raw_records: list[dict]) -> tuple[list[MovieDetails], list[dict]]:
     return valid
 
 
-def extract_rotten_tomatoes(rating_list: list):
-    """This is a helper function it extract the Rotten Tomatoes value from Ratings coulmn"""
+def extract_rotten_tomatoes(rating_list: list) -> int | None:
+    """Extract the Rotten Tomatoes score from the Ratings list."""
     if not isinstance(rating_list, list):
         return None
     for rating in rating_list:
@@ -135,7 +137,7 @@ def transform(readings: list[MovieDetails], df_csv: pd.DataFrame) -> pd.DataFram
     return df_final
 
 
-def run():
+def run() -> None:
     """Run the full pipeline: fetch -> validate -> transform -> store."""
     log.info("Pipeline starting")
     log.info("Checking and cleaning the raw CSV data...")
@@ -156,8 +158,6 @@ def run():
     csv_path = "./data/netflix_titles_cleaned.csv"
     df_csv = pd.read_csv(csv_path)
     df = transform(readings, df_csv)
-    df.to_csv("./data/combined_output_test.csv", index=False, encoding="utf-8")
-    log.info("Saved a local copy of combined data to data/combined_output_test.csv")
     insert_readings(df)
     upload_raw_json(raw)
 
@@ -165,7 +165,6 @@ def run():
 
 
 if __name__ == "__main__":
-    # Fail fast if required env vars are missing
     for var in ["POSTGRES_URL", "AZURE_STORAGE_CONNECTION_STRING"]:
         if var not in os.environ:
             log.error("Missing required environment variable: %s", var)
