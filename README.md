@@ -2,7 +2,7 @@
 
 ## What it does
 
-This data pipeline clean and processes local Netflix titles, enriches them with live movie metadata (ratings, scores, and votes) from the OMDb API, and validates the unified records using Pydantic models. The final enriched dataset is structured and loaded into a PostgreSQL database, while the raw JSON responses are securely backed up in Azure Blob Storage.
+This data pipeline cleans and processes local Netflix titles, enriches them with live movie metadata (ratings, scores, and votes) from the OMDb API, and validates the unified records using Pydantic models. The final enriched dataset is structured and loaded into a PostgreSQL database, while the raw JSON responses are securely backed up in Azure Blob Storage.
 
 👉 For deep technical details, issues faced, and data metrics, read our full [Data Discovery & Cleaning Report](data_cleaning_report.md).
 
@@ -21,15 +21,9 @@ cp .env.example .env
 echo "POSTGRES_URL=$(az keyvault secret show --vault-name kv-hyf-data --name postgres-url --query value -o tsv)" >> .env
 echo "AZURE_STORAGE_CONNECTION_STRING=$(az keyvault secret show --vault-name kv-hyf-data --name storage-connection-string --query value -o tsv)" >> .env
 
-# 1. Populate .env from Azure Key Vault
-cp .env.example .env
-echo "POSTGRES_URL=$(az keyvault secret show --vault-name kv-hyf-data --name postgres-url --query value -o tsv)" >> .env
-echo "AZURE_STORAGE_CONNECTION_STRING=$(az keyvault secret show --vault-name kv-hyf-data --name storage-connection-string --query value -o tsv)" >> .env
-
-# Set your personal schema and OMDB Key (Replace with your actual handle/key):
-echo "DB_SCHEMA=dev_your_github_handle" >> .env
-echo "OMDB_API_KEY=your_omdb_api_key_here" >> .env
-
+# Set your personal schema and OMDb key:
+echo "DB_SCHEMA=dev_mareh-aboghanem" >> .env
+echo "OMDB_API_KEY=<your_omdb_api_key>" >> .env
 
 # 2. Install dependencies
 uv sync
@@ -38,8 +32,8 @@ uv sync
 uv run python -m src.pipeline
 
 # 4. Or build and run with Docker
-docker build -t my-pipeline .
-docker run --env-file .env my-pipeline
+docker build -t mareh-aboghanem-pipeline .
+docker run --env-file .env mareh-aboghanem-pipeline
 ```
 
 ## Run tests
@@ -52,15 +46,15 @@ uv run pytest tests/ -v
 
 ```bash
 # Build for linux/amd64 (required by Azure Container Apps) and push to ACR
-docker build --platform linux/amd64 -t hyfregistry.azurecr.io/my-pipeline:latest .
-docker push hyfregistry.azurecr.io/my-pipeline:latest
+docker build --platform linux/amd64 -t hyfregistry.azurecr.io/mareh-aboghanem-pipeline:latest .
+docker push hyfregistry.azurecr.io/mareh-aboghanem-pipeline:latest
 
 # Create Container App Job (runs daily at 06:00 UTC)
 az containerapp job create \
-  --name my-pipeline-job \
+  --name mareh-aboghanem-job-scheduled \
   --resource-group rg-hyf-data \
   --environment env-hyf-data \
-  --image hyfregistry.azurecr.io/my-pipeline:latest \
+  --image hyfregistry.azurecr.io/mareh-aboghanem-pipeline:latest \
   --registry-server hyfregistry.azurecr.io \
   --trigger-type Schedule \
   --cron-expression "0 6 * * *" \
@@ -69,11 +63,12 @@ az containerapp job create \
   --env-vars \
     POSTGRES_URL="$(az keyvault secret show --vault-name kv-hyf-data --name postgres-url --query value -o tsv)" \
     AZURE_STORAGE_CONNECTION_STRING="$(az keyvault secret show --vault-name kv-hyf-data --name storage-connection-string --query value -o tsv)" \
-    DB_SCHEMA=dev_alice \
+    DB_SCHEMA=dev_mareh-aboghanem \
+    OMDB_API_KEY=<your_omdb_api_key> \
     LOG_LEVEL=INFO
 
 # Trigger a manual run for testing (without waiting for the schedule)
-az containerapp job start --name my-pipeline-job --resource-group rg-hyf-data
+az containerapp job start --name mareh-aboghanem-job-scheduled --resource-group rg-hyf-data
 ```
 
 ## Enable ACR push from CI (optional)
@@ -112,10 +107,10 @@ Download and run the installer from [postgresql.org/download/windows](https://ww
 
 ```bash
 # Check job execution
-az containerapp job execution list --name my-pipeline-job --resource-group rg-hyf-data --output table
+az containerapp job execution list --name mareh-aboghanem-job-scheduled --resource-group rg-hyf-data --output table
 
-# Check Postgres (replace dev_alice with your schema, <your_table> with your table name)
-psql "$POSTGRES_URL" -c "SELECT COUNT(*) FROM dev_alice.<your_table>;"
+# Check Postgres
+psql "$POSTGRES_URL" -c "SELECT COUNT(*) FROM \"dev_mareh-aboghanem\".omdb_movies;"
 
 # Check Blob Storage
 az storage blob list --account-name hyfstoragedev --container-name raw --prefix pipeline/ --output table
@@ -124,5 +119,5 @@ az storage blob list --account-name hyfstoragedev --container-name raw --prefix 
 ## Clean up
 
 ```bash
-az containerapp job delete --name my-pipeline-job --resource-group rg-hyf-data --yes
+az containerapp job delete --name mareh-aboghanem-job-scheduled --resource-group rg-hyf-data --yes
 ```

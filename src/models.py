@@ -1,7 +1,6 @@
-"""Pydantic models for data validation. Replace with your own."""
+"""Pydantic models for data validation."""
 
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, ConfigDict
 
 
 class RatingItem(BaseModel):
@@ -14,33 +13,30 @@ class RatingItem(BaseModel):
 class MovieDetails(BaseModel):
     """Pydantic model to validate incoming data from OMDb API."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     Title: str
     Year: str
-    Rated: Optional[str] = "N/A"
-    Released: Optional[str] = "N/A"
-    Runtime: Optional[str] = "N/A"
-    Genre: Optional[str] = "N/A"
-    Director: Optional[str] = "Unknown"
-    Writer: Optional[str] = "Unknown"
-    Actors: Optional[str] = "Unknown"
-    Plot: Optional[str] = None
-    Language: Optional[str] = "N/A"
-    Country: Optional[str] = "N/A"
-    Awards: Optional[str] = "N/A"
-    Poster: Optional[str] = None
-    Ratings: Optional[List[RatingItem]] = []
-    Metascore: Optional[str] = "N/A"
-    imdbRating: Optional[str] = "N/A"
-    imdbVotes: Optional[str] = "N/A"
+    Rated: str | None = "N/A"
+    Released: str | None = "N/A"
+    Runtime: str | None = "N/A"
+    Genre: str | None = "N/A"
+    Director: str | None = "Unknown"
+    Writer: str | None = "Unknown"
+    Actors: str | None = "Unknown"
+    Plot: str | None = None
+    Language: str | None = "N/A"
+    Country: str | None = "N/A"
+    Awards: str | None = "N/A"
+    Poster: str | None = None
+    Ratings: list[RatingItem] | None = []
+    Metascore: str | None = "N/A"
+    imdbRating: str | None = "N/A"
+    imdbVotes: str | None = "N/A"
     imdbID: str
-    Type: Optional[str] = "movie"
-    DVD: Optional[str] = "N/A"
-    BoxOffice: Optional[str] = "N/A"
-    Production: Optional[str] = "N/A"
-    Website: Optional[str] = "N/A"
+    Type: str | None = "movie"
+    DVD: str | None = "N/A"
+    BoxOffice: str | None = "N/A"
+    Production: str | None = "N/A"
+    Website: str | None = "N/A"
     Response: str
-
-    class Config:
-        """Pydantic configuration."""
-
-        populate_by_name = True
